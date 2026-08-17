@@ -3,16 +3,10 @@ import logging
 from functools import partial
 
 from homeassistant.components.vacuum import (
-    ATTR_STATUS,
-    STATE_CLEANING,
-    STATE_DOCKED,
-    STATE_ERROR,
-    STATE_IDLE,
-    STATE_PAUSED,
-    STATE_RETURNING,
+    StateVacuumEntity,
+    VacuumEntityFeature,
+    VacuumActivity,
 )
-
-from homeassistant.components.vacuum import StateVacuumEntity, VacuumEntityFeature
 from homeassistant.helpers.icon import icon_for_battery_level
 
 from . import ECOVACS_DEVICES, CONF_SUPPORTED_FEATURES, ECOVACS_CONFIG
@@ -23,14 +17,14 @@ ATTR_ERROR = "error"
 ATTR_COMPONENT_PREFIX = "component_"
 
 STATE_MAP = {
-    "cleaning": STATE_CLEANING,
-    "auto": STATE_CLEANING,
-    "spot_area": STATE_CLEANING,
-    "charging": STATE_DOCKED,
-    "idle": STATE_DOCKED,
-    "pause": STATE_PAUSED,
-    "returning": STATE_RETURNING,
-    "stop": STATE_IDLE,
+    "cleaning": VacuumActivity.CLEANING,
+    "auto": VacuumActivity.CLEANING,
+    "spot_area": VacuumActivity.CLEANING,
+    "charging": VacuumActivity.DOCKED,
+    "idle": VacuumActivity.DOCKED,
+    "pause": VacuumActivity.PAUSED,
+    "returning": VacuumActivity.RETURNING,
+    "stop": VacuumActivity.IDLE,
 }
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
@@ -126,7 +120,7 @@ class EcovacsDeebotVacuum(StateVacuumEntity):
         try:
             return STATE_MAP[self.device.vacuum_status]
         except KeyError:
-            return STATE_ERROR
+            return VacuumActivity.ERROR
 
     @property
     def status(self):
@@ -138,7 +132,7 @@ class EcovacsDeebotVacuum(StateVacuumEntity):
         from ozmo import Charge
 
         self.device.run(Charge())
-	
+    
     @property
     def battery_icon(self):
         """Return the battery icon for the vacuum cleaner."""
@@ -257,7 +251,7 @@ class EcovacsDeebotVacuum(StateVacuumEntity):
           }
         }
 
-		or
+        or
 
         Send command to edge clean.
 
@@ -319,6 +313,6 @@ class EcovacsDeebotVacuum(StateVacuumEntity):
             data[attr_name] = int(val * 100)
 
         data["clean_mode"] = self.clean_mode
-        data[ATTR_STATUS] = self.state
+        data["status"] = self.state
 
         return data
